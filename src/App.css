@@ -634,3 +634,42 @@ code {
   .grade-tabs { gap: 3px; }
   .gtab { padding: 5px 8px; font-size: 0.68rem; }
 }
+
+/* ═════════ V3 additions ═════════ */
+.header-right { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+
+.actor-input {
+  width: 150px;
+  padding: 7px 12px;
+  font-size: 0.82rem;
+  border-radius: 20px;
+}
+
+.hint-text { font-size: 0.84rem; color: var(--muted); margin: -8px 0 16px; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: -4px; }
+.chip {
+  padding: 4px 11px;
+  font-size: 0.75rem;
+  border-radius: 20px;
+  color: var(--muted);
+}
+.chip:hover:not(:disabled) { color: var(--text); border-color: var(--accent); }
+
+.existing-skus {
+  font-size: 0.8rem;
+  color: var(--muted);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.pill-adjust { color: var(--yellow); font-size: 0.8rem; font-weight: 600; }
+.delta-pos { color: var(--green); }
+.delta-neg { color: var(--red); }
+
+@media (max-width: 768px) {
+  .header-right { width: 100%; justify-content: space-between; }
+  .actor-input { flex: 1; min-width: 0; width: auto; }
+}

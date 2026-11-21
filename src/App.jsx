@@ -4,13 +4,17 @@ import ProductGrid from './components/ProductGrid';
 import ResiInput   from './components/ResiInput';
 import BarangMasuk from './components/BarangMasuk';
 import Riwayat     from './components/Riwayat';
+import Kelola      from './components/Kelola';
 import { fetchProducts } from './lib/api';
+import { getActor, setActor } from './lib/actor';
 
 const TABS = [
-  { icon: '📦', label: 'Stock'        },
+  { icon: '🧪', label: 'Stock Kimia'  },
+  { icon: '🍶', label: 'Botol'        },
   { icon: '📝', label: 'Input Resi'   },
   { icon: '📥', label: 'Barang Masuk' },
   { icon: '📋', label: 'Riwayat'      },
+  { icon: '🛠️', label: 'Kelola'       },
 ];
 
 export default function App() {
@@ -18,9 +22,11 @@ export default function App() {
   const [loading,  setLoading]  = useState(true);
   const [errMsg,   setErrMsg]   = useState('');
   const [tab,      setTab]      = useState(0);
+  const [actor,    setActorState] = useState(getActor() ?? '');
 
-  const load = useCallback(async () => {
-    setLoading(true); setErrMsg('');
+  // Muat ulang data tanpa mengedipkan layar (hanya pertama kali "loading")
+  const refresh = useCallback(async () => {
+    setErrMsg('');
     try {
       setProducts(await fetchProducts());
     } catch (e) {
@@ -30,10 +36,13 @@ export default function App() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => { refresh(); }, [refresh]);
 
-  const totalSkus = products.reduce((s, p) => s + p.skus.length, 0);
-  const lowStock  = products.flatMap(p => p.skus).filter(s => !s.is_bulk && (s.qty ?? 0) === 0).length;
+  const chemCount  = products.filter(p => (p.kind ?? 'chemical') === 'chemical').length;
+  const bottleSkus = products.filter(p => p.kind === 'bottle').reduce((s, p) => s + p.skus.length, 0);
+  const emptyCount = products
+    .flatMap(p => p.skus.map(s => ({ ...s, kind: p.kind })))
+    .filter(s => !s.is_bulk && Number(s.qty ?? 0) === 0).length;
 
   return (
     <div className="app">
@@ -42,44 +51,43 @@ export default function App() {
           <h1>AMS Kimia</h1>
           <p className="subtitle">Stock Opname · Divisi Online</p>
         </div>
-        <div className="header-stats">
-          <div className="stat-chip">
-            <span className="stat-num">{products.length}</span>
-            <span className="stat-lbl">Produk</span>
+        <div className="header-right">
+          <input
+            className="actor-input"
+            type="text"
+            value={actor}
+            onChange={e => { setActorState(e.target.value); setActor(e.target.value); }}
+            placeholder="👤 Nama kamu"
+            title="Nama ini dicatat di Riwayat setiap kamu mengubah stock"
+          />
+          <div className="header-stats">
+            <div className="stat-chip"><span className="stat-num">{chemCount}</span><span className="stat-lbl">Produk</span></div>
+            <div className="stat-chip"><span className="stat-num">{bottleSkus}</span><span className="stat-lbl">Botol</span></div>
+            {emptyCount > 0 && (
+              <div className="stat-chip warn"><span className="stat-num">{emptyCount}</span><span className="stat-lbl">Kosong ⚠️</span></div>
+            )}
           </div>
-          <div className="stat-chip">
-            <span className="stat-num">{totalSkus}</span>
-            <span className="stat-lbl">SKU</span>
-          </div>
-          {lowStock > 0 && (
-            <div className="stat-chip warn">
-              <span className="stat-num">{lowStock}</span>
-              <span className="stat-lbl">Habis ⚠️</span>
-            </div>
-          )}
         </div>
       </header>
 
       <nav className="tab-nav">
         {TABS.map((t, i) => (
-          <button
-            key={i}
-            className={`tab-btn ${tab === i ? 'active' : ''}`}
-            onClick={() => setTab(i)}
-          >
+          <button key={i} className={`tab-btn ${tab === i ? 'active' : ''}`} onClick={() => setTab(i)}>
             <span className="tab-icon">{t.icon}</span>
             <span className="tab-label">{t.label}</span>
           </button>
         ))}
       </nav>
 
-      {errMsg && <div className="banner-error">{errMsg}</div>}
+      {errMsg && <div className="banner-error" style={{ margin: '14px 24px 0' }}>{errMsg}</div>}
 
       <main>
-        {tab === 0 && <ProductGrid products={products} loading={loading} onRefresh={load} />}
-        {tab === 1 && <ResiInput onRefresh={load} />}
-        {tab === 2 && <BarangMasuk products={products} onRefresh={load} />}
-        {tab === 3 && <Riwayat />}
+        {tab === 0 && <ProductGrid kind="chemical" products={products} loading={loading} onRefresh={refresh} />}
+        {tab === 1 && <ProductGrid kind="bottle"   products={products} loading={loading} onRefresh={refresh} />}
+        {tab === 2 && <ResiInput onRefresh={refresh} />}
+        {tab === 3 && <BarangMasuk products={products} onRefresh={refresh} />}
+        {tab === 4 && <Riwayat />}
+        {tab === 5 && <Kelola products={products} onRefresh={refresh} />}
       </main>
     </div>
   );
